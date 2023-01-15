@@ -5,6 +5,11 @@ import { useState, useEffect } from "react";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { putData, postData, deleteData, getData } from "../utils/fetchData.js";
 
+//pentru informare
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+
 export default function Images() {
   const [refresh, setRefresh] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -96,7 +101,7 @@ export default function Images() {
     });
   }, [refresh]);
 
-  const onAddImage = () => {
+  const onAddImage = async () => {
     const randomNumber = parseInt(Math.random() * 1000);
     const newImage = {
       ImageId: Math.floor(Math.random() * 10000) + "_" + Date.now(),
@@ -106,10 +111,27 @@ export default function Images() {
       Deleted: true,
       UserId: null,
     };
+    /*
     postData("https://localhost:44313/api/Image", newImage).then((data) => {
+      if(data.status != 200){
+        toast("Eroare la crearea imaginii!");
+      }
+      else{
+        toast("Imagine inserata cu succes!");
+      }
       console.log(data); // JSON data parsed by `data.json()` call
       setRefresh(!refresh);
     });
+    */
+    const data = await postData("https://localhost:44313/api/Image", newImage);
+    if(data.status != 200){
+      toast("Eroare la crearea imaginii!");
+    }
+    else{
+      toast("Imagine inserata cu succes!");
+    }
+    console.log(data); // JSON data parsed by `data.json()` call
+    setRefresh(!refresh);
   };
 
   const onDeleteImage = (record) => {
@@ -120,6 +142,13 @@ export default function Images() {
       onOk: () => {
         deleteData(`https://localhost:44313/api/Image/${record.ImageId}`).then(
           (data) => {
+            if(data.status != 200){
+              toast("Eroare la stergere!");
+            }
+            else{
+              toast("Element sters cu succes!");
+            }
+            console.log("Aici se incepe stergerea:");
             console.log(data); // JSON data parsed by `data.json()` call
             setRefresh(!refresh);
           }
@@ -138,8 +167,11 @@ export default function Images() {
   };
   return (
     <div className="PricingEffect">
+      <ToastContainer />
       <header className="PricingEffect-header">
-        <Button onClick={onAddImage}>Add a new Image</Button>
+        <Button onClick={async () => 
+          await onAddImage()}
+          >Add a new Image</Button>
         <Table columns={columns} dataSource={dataSource}></Table>
         <Modal
           title="Edit Image"
@@ -168,8 +200,14 @@ export default function Images() {
               `https://localhost:44313/api/Image/${editingImage.ImageId}`,
               json_put
             ).then((data) => {
-              console.log(data); // JSON data parsed by `data.json()` call
-              setRefresh(!refresh);
+              if(data.status != 200){
+                toast("Eroare de editare!");
+              }
+              else{
+                toast("Editat cu succes!");
+                console.log(data); // JSON data parsed by `data.json()` call
+                setRefresh(!refresh);
+              }
             });
             resetEditing();
           }}
