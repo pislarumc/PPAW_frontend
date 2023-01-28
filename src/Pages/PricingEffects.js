@@ -3,13 +3,15 @@ import "../Styles/Table.css";
 import { Button, Table, Modal, Input } from "antd";
 import { useState, useEffect } from "react";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import  { putData, postData, deleteData, getData } from "../utils/fetchData.js"
+import { putData, postData, deleteData, getData } from "../utils/fetchData.js";
+import { ToastContainer, toast } from "react-toastify";
 
 export default function PricingEffects() {
   const [refresh, setRefresh] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editingEffect, setEditingEffect] = useState(null);
   const [dataSource, setDataSource] = useState([
+    /**the prototype of the needed object */
     /*{
       EffectName:'string',
       Cost:'string',
@@ -22,6 +24,17 @@ export default function PricingEffects() {
       PropertyUnit:'string'
     }*/
   ]);
+  const accepted_css_filters = [
+    { cssName: "blur", unit: "px" },
+    { cssName: "brightness", unit: "" },
+    { cssName: "contrast", unit: "%" },
+    { cssName: "grayscale", unit: "%" },
+    { cssName: "hue-rotate", unit: "deg" },
+    { cssName: "invert", unit: "%" },
+    { cssName: "opacity", unit: "%" },
+    { cssName: "saturate", unit: "%" },
+    { cssName: "sepia", unit: "%" },
+  ];
   const columns = [
     {
       key: "1",
@@ -92,23 +105,22 @@ export default function PricingEffects() {
     },
   ];
 
+  /**gets all effects */
   useEffect(() => {
-    getData(`https://localhost:44313/api/Effect`)
-      .then((json) => {
-        let array = [];
-        json.forEach((element) => {
-          console.log(element);
-          //array_path.push(element.Path);
-          array.push(element);
-        });
-        setDataSource(array);
-        console.log(array);
+    getData(`/api/Effect`).then((json) => {
+      let array = [];
+      json.forEach((element) => {
+        console.log(element);
+        //array_path.push(element.Path);
+        array.push(element);
       });
+      setDataSource(array);
+      console.log(array);
+    });
   }, [refresh]);
 
-  
+  /**creates new effect */
   const onAddEffect = () => {
-    const randomNumber = parseInt(Math.random() * 1000);
     const newEffect = {
       EffectName: "New Effect",
       Cost: "0.0",
@@ -120,22 +132,29 @@ export default function PricingEffects() {
       PropertyRangeMax: "20",
       PropertyUnit: "",
     };
-    postData("https://localhost:44313/api/Effect", newEffect).then((data) => {
-      console.log(data); // JSON data parsed by `data.json()` call
+    postData("/api/Effect", newEffect).then((data) => {
+      if (data.status !== 200) {
+        toast("Error on creating effect!");
+      } else {
+        toast("Effect created!");
+      }
       setRefresh(!refresh);
     });
   };
 
+  /**delete effect */
   const onDeleteEffect = (record) => {
     Modal.confirm({
       title: "Are you sure, you want to delete this effect record?",
       okText: "Yes",
       okType: "danger",
       onOk: () => {
-        deleteData(
-          `https://localhost:44313/api/Effect/${record.EffectId}`
-        ).then((data) => {
-          console.log(data); // JSON data parsed by `data.json()` call
+        deleteData(`/api/Effect/${record.EffectId}`).then((data) => {
+          if (data.status !== 200) {
+            toast("Error on deleting effect!");
+          } else {
+            toast("Efefct deleted!");
+          }
           setRefresh(!refresh);
         });
       },
@@ -152,6 +171,7 @@ export default function PricingEffects() {
   };
   return (
     <div className="PricingEffect">
+      <ToastContainer />
       <header className="PricingEffect-header">
         <Button onClick={onAddEffect}>Add a new Effect</Button>
         <Table columns={columns} dataSource={dataSource}></Table>
@@ -163,22 +183,16 @@ export default function PricingEffects() {
             resetEditing();
           }}
           onOk={() => {
-            /*
-            setDataSource((pre) => {
-              return pre.map((effect) => {
-                if (effect.EffectId === editingEffect.EffectId) {
-                  return editingEffect;
-                } else {
-                  return effect;
-                }
-              });
-            });*/
             putData(
-              `https://localhost:44313/api/Effect/${editingEffect.EffectId}`,
+              `/api/Effect/${editingEffect.EffectId}`,
               editingEffect
             ).then((data) => {
-              console.log(data); // JSON data parsed by `data.json()` call
-              setRefresh(!refresh);
+              if (data.status !== 200) {
+                toast("Error on editing effect!");
+              } else {
+                toast("Effect edited!");
+                setRefresh(!refresh);
+              }
             });
             resetEditing();
           }}
@@ -199,14 +213,7 @@ export default function PricingEffects() {
               });
             }}
           />
-          <Input
-            value={editingEffect?.EffectId}
-            /*onChange={(e) => {
-            setEditingEffect((pre) => {
-              return { ...pre, EffectId: e.target.value };
-            });
-          }}*/
-          />
+          <Input value={editingEffect?.EffectId} />
           <select
             style={{
               textAlign: "center",
@@ -233,6 +240,31 @@ export default function PricingEffects() {
               });
             }}
           />
+          {/* -------------------------------------------------------------------------- */}
+          <select
+            style={{
+              textAlign: "center",
+              borderRadius: "8px",
+              borderColor: "hsl(204, 100%, 56%)",
+              width: "100%",
+            }}
+            value={editingEffect?.CssProperty}
+            onChange={(e) => {
+              setEditingEffect((pre) => {
+                const unit_required = accepted_css_filters.find(filter => filter.cssName === e.target.value).unit;
+                return { ...pre, CssProperty: e.target.value, PropertyUnit: unit_required };
+              });
+            }}
+          >
+            {accepted_css_filters.map((filter, index) => {
+              return filter ? (
+                <option key={index}> {filter.cssName}</option>
+              ) : (
+                <></>
+              );
+            })}
+          </select>
+          {/* -------------------------------------------------------------------------- */}
           <Input
             value={editingEffect?.PropertyValue}
             onChange={(e) => {
@@ -259,11 +291,6 @@ export default function PricingEffects() {
           />
           <Input
             value={editingEffect?.PropertyUnit}
-            onChange={(e) => {
-              setEditingEffect((pre) => {
-                return { ...pre, PropertyUnit: e.target.value };
-              });
-            }}
           />
         </Modal>
       </header>

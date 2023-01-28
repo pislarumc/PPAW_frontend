@@ -14,19 +14,7 @@ export default function Images() {
   const [refresh, setRefresh] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editingImage, setEditingImage] = useState(null);
-  const [dataSource, setDataSource] = useState([
-    /*{
-      EffectName:'string',
-      Cost:'string',
-      EffectId:'string',
-      Deleted:'string',
-      CssProperty:'string',
-      PropertyValue:'string',
-      PropertyRangeMin:'string',
-      PropertyRangeMax:'string',
-      PropertyUnit:'string'
-    }*/
-  ]);
+  const [dataSource, setDataSource] = useState([]);
   const columns = [
     {
       key: "1",
@@ -88,8 +76,9 @@ export default function Images() {
     },
   ];
 
+  /**gets all images */
   useEffect(() => {
-    getData(`https://localhost:44313/api/Image`).then((json) => {
+    getData(`/api/Image`).then((json) => {
       let array = [];
       json.forEach((element) => {
         console.log(element);
@@ -101,6 +90,7 @@ export default function Images() {
     });
   }, [refresh]);
 
+  /**insert new image */
   const onAddImage = async () => {
     const randomNumber = parseInt(Math.random() * 1000);
     const newImage = {
@@ -111,45 +101,33 @@ export default function Images() {
       Deleted: true,
       UserId: null,
     };
-    /*
-    postData("https://localhost:44313/api/Image", newImage).then((data) => {
-      if(data.status != 200){
-        toast("Eroare la crearea imaginii!");
+    
+    postData("/api/Image", newImage).then((data) => {
+      if(data.status !== 200){
+        toast("Error on creating image!");
       }
       else{
-        toast("Imagine inserata cu succes!");
+        toast("Image created!");
       }
-      console.log(data); // JSON data parsed by `data.json()` call
       setRefresh(!refresh);
     });
-    */
-    const data = await postData("https://localhost:44313/api/Image", newImage);
-    if(data.status != 200){
-      toast("Eroare la crearea imaginii!");
-    }
-    else{
-      toast("Imagine inserata cu succes!");
-    }
-    console.log(data); // JSON data parsed by `data.json()` call
-    setRefresh(!refresh);
   };
 
+  // delete image
   const onDeleteImage = (record) => {
     Modal.confirm({
       title: "Are you sure, you want to delete this image record?",
       okText: "Yes",
       okType: "danger",
       onOk: () => {
-        deleteData(`https://localhost:44313/api/Image/${record.ImageId}`).then(
+        deleteData(`/api/Image/${record.ImageId}`).then(
           (data) => {
-            if(data.status != 200){
-              toast("Eroare la stergere!");
+            if(data.status !== 200){
+              toast("Error on deleting image!");
             }
             else{
-              toast("Element sters cu succes!");
+              toast("Image deleted!");
             }
-            console.log("Aici se incepe stergerea:");
-            console.log(data); // JSON data parsed by `data.json()` call
             setRefresh(!refresh);
           }
         );
@@ -181,31 +159,20 @@ export default function Images() {
             resetEditing();
           }}
           onOk={() => {
-            /*
-            setDataSource((pre) => {
-              return pre.map((effect) => {
-                if (effect.EffectId === editingImage.EffectId) {
-                  return editingImage;
-                } else {
-                  return effect;
-                }
-              });
-            });*/
             let json_put = {
               ...editingImage,
               UserId: editingImage.UserId,
               User: { UserId: editingImage.UserId },
             };
             putData(
-              `https://localhost:44313/api/Image/${editingImage.ImageId}`,
+              `/api/Image/${editingImage.ImageId}`,
               json_put
             ).then((data) => {
-              if(data.status != 200){
-                toast("Eroare de editare!");
+              if(data.status !== 200){
+                toast("Error on editing image!");
               }
               else{
-                toast("Editat cu succes!");
-                console.log(data); // JSON data parsed by `data.json()` call
+                toast("Image edited!");
                 setRefresh(!refresh);
               }
             });
@@ -214,11 +181,6 @@ export default function Images() {
         >
           <Input
             value={editingImage?.ImageId}
-            /*onChange={(e) => {
-              setEditingImage((pre) => {
-                return { ...pre, ImageId: e.target.value };
-              });
-            }}*/
           />
           <Input
             value={editingImage?.Name}

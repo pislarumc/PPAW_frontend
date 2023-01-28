@@ -1,5 +1,5 @@
 /**
-   *
+   * fecth function to pu data
    * @param {*} url
    * @param {*} data
    * @returns
@@ -23,7 +23,12 @@
     return {...obj, status: response.status}; // parses JSON response into native JavaScript objects
   }
 
-  //post data
+  /**
+   * fetch function to post data
+   * @param {*} url 
+   * @param {*} data 
+   * @returns 
+   */
   async function postData(url = "", data = {}) {
     // Default options are marked with *
     const response = await fetch(url, {
@@ -40,10 +45,15 @@
       body: JSON.stringify(data), // body data type must match "Content-Type" header
     });
     const obj =  await response.json();
+    console.log(response);
     return {...obj, status: response.status}; // parses JSON response into native JavaScript objects
   }
 
-  //delete data
+/**
+ * fetch function to delete data
+ * @param {*} url 
+ * @returns 
+ */
   async function deleteData(url = "") {
     // Default options are marked with *
     const response = await fetch(url, {
@@ -63,7 +73,11 @@
     return {...obj, status: response.status}; // parses JSON response into native JavaScript objects
   }
 
-    //delete data
+    /**
+     * fetch function to get data
+     * @param {*} url 
+     * @returns 
+     */
     async function getData(url = "") {
         // Default options are marked with *
         const response = await fetch(url, {
@@ -83,6 +97,9 @@
       }
 
 
+      /**
+       * functions exported by this utils module
+       */
 export {
     putData,
     postData,

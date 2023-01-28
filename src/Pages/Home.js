@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import "../Styles/Home.css";
 import Slider from "../Components/Slider";
 import SidebarItem from "../Components/SlidebarItem";
 import { Button, Table, Modal, Input } from "antd";
 
+import { ToastContainer, toast } from 'react-toastify';
 import * as htmlToImage from 'html-to-image';
+
+import  { putData, postData, deleteData, getData } from "../utils/fetchData.js"
 
 const DEFAULT_OPTIONS = [
   {
@@ -31,6 +34,7 @@ export default function Home() {
   const myCanvas = useRef();
   const myImage = useRef();
 
+  /**called when the download modal is triggered to create the image on canvas */
   useEffect(() => {
     if(myCanvas.current)
     {
@@ -58,9 +62,8 @@ export default function Home() {
   }, [isShowing]);
 
   useEffect(() => {
-    //fetch(`https:jlnosdfbdj/api/Image${''}`)
-    fetch(`https://localhost:44313/api/Effect`)
-      .then((response) => response.json())
+    // fetch(`https://localhost:44313/api/Effect`)
+    getData(`/api/Effect`)
       .then((json) => {
         let array = [];
         json.forEach((element) => {
@@ -84,19 +87,31 @@ export default function Home() {
         });
         if (options === undefined) array = [{}];
         setOptions(array);
+        if(array.length!==0)
+        {
+          for(let i=0;i<array.length;i++)
+          {
+            if(array[i].deleted === false)
+            {
+              setSelectedOptionIndex(i);
+              i= array.length;
+            }
+          }
+        }
       });
   }, []); //pentru a nu pierde setarile intre efecte si a permite folosirea mai multor efecte concomitent
 
+  /**default image just for start */
   useEffect(() => {
     setSelectImage(
       "https://png.pngitem.com/pimgs/s/244-2446110_transparent-social-media-clipart-black-and-white-choose.png"
     );
   }, []);
 
+  // get all images again
   useEffect(() => {
-    //fetch(`https:jlnosdfbdj/api/Image${''}`)
-    fetch(`https://localhost:44313/api/Image`)
-      .then((response) => response.json())
+      //------------------------------------------------------------
+      getData(`/api/Image`)
       .then((json) => {
         let array_path = [];
         json.forEach((element) => {
@@ -106,9 +121,25 @@ export default function Home() {
         });
         if (images === undefined) array_path = [""];
         setImages(array_path);
+        if(array_path.length!==0)
+        {
+          for(let i=0;i<array_path.length;i++)
+          {
+            if(array_path[i].deleted === false)
+            {
+              setSelectImage(array_path[i].Path);
+              i= array_path.length;
+            }
+          }
+        }
       });
+      //------------------------------------------------------------
   }, [selectImage]);
 
+  /**
+   * slider control used to change a state
+   * @param {*} param0 
+   */
   function handleSliderChange({ target }) {
     setOptions((prevOptions) => {
       return prevOptions.map((option, index) => {
@@ -118,6 +149,10 @@ export default function Home() {
     });
   }
 
+  /**
+   * used to dinamicly change url and css filters of an image
+   * @returns { filter: css_image_filter, backgroundImage: image_url}
+   */
   function getImageStyleAndURL() {
     //filters
     const filters = options.map((option) => {
@@ -135,17 +170,27 @@ export default function Home() {
     };
   }
 
-  //console.log(getImageStyle())
+  // -------------------------------------------------------------------------------------------------
+  /**
+   * takes an HTML tag and converts it into an image, to be able to download it
+   */
+  const downloadImage = useCallback(() => {
+    if (myImage.current === null) {
+      return
+    }
 
-  const downloadImage = async () => {
-    const dataUrl = await htmlToImage.toPng(myImage.current);
-
-    // download image
-    const link = document.createElement('a');
-    link.download = 'html-to-img.png';
-    link.href = dataUrl;
-    link.click();
-  };
+    htmlToImage.toPng(myImage.current, { cacheBust: true, })
+      .then((dataUrl) => {
+        const link = document.createElement('a')
+        link.download = 'Edited_photo.png'
+        link.href = dataUrl
+        link.click()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  }, [myImage])
+  // -------------------------------------------------------------------------------------------------
 
   return (
     <div className="container-home">
@@ -163,6 +208,7 @@ export default function Home() {
         onOk={() => {
           setIsShowing(false);
           downloadImage();
+          toast("Image downloaded!");
         }}
       >
         <canvas style={{backgroundColor:"gray", maxWidth: "100%", maxHeight: "100%"}} className="canvas" ref={myCanvas} />
@@ -193,8 +239,10 @@ export default function Home() {
         style={{
           textAlign: "center",
           borderRadius: "8px",
-          borderColor: "hsl(204, 100%, 56%)",
+          borderColor: "gray",
           maxWidth: "100%",
+          color: "white", 
+          backgroundColor: "black"
         }}
         value={selectImage}
         onChange={(e) => setSelectImage(e.target.value)}
@@ -218,9 +266,11 @@ export default function Home() {
         onClick={() => {
           setIsShowing(true);
         }}
+        type="primary"
       >
         Show
       </Button>
+      <ToastContainer />
     </div>
   );
 }
