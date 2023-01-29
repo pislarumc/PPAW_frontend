@@ -178,18 +178,19 @@ export default function Home() {
     if (myImage.current === null) {
       return
     }
-
     htmlToImage.toPng(myImage.current, { cacheBust: true, })
       .then((dataUrl) => {
         const link = document.createElement('a')
         link.download = 'Edited_photo.png'
         link.href = dataUrl
         link.click()
+        toast("Image downloaded!");
       })
       .catch((err) => {
+        toast("Error on downloading image!");
         console.log(err)
       })
-  }, [myImage])
+  }, [myImage, isShowing])// dependency = modal command state and image reference
   // -------------------------------------------------------------------------------------------------
 
   return (
@@ -208,7 +209,6 @@ export default function Home() {
         onOk={() => {
           setIsShowing(false);
           downloadImage();
-          toast("Image downloaded!");
         }}
       >
         <canvas style={{backgroundColor:"gray", maxWidth: "100%", maxHeight: "100%"}} className="canvas" ref={myCanvas} />
